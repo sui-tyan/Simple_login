@@ -1,0 +1,27 @@
+<%- include('header'); -%> 
+
+
+
+<div class="navbar navbar-expand-lg bg-light">
+    <div class="container-fluid">
+        <a href="#" class="navbar-brand">Logo</a>
+    </div>
+</div>
+<div class="container-fluid login form-signin w-100 m-auto">
+    <p>Signup</p>
+    <form action="/signup" method="post">
+        <div class="container">
+            <h5>Email</h5>
+            <input type="email" class="form-control" name="newEmail" id="" placeholder="user@email.com">
+        </div>
+        <div class="container">
+            <h5>Password</h5>
+            <input type="password" class="form-control" name="newPassword" id="">
+        </div>
+        <button type="submit">Sign up</button>
+    </form>
+</div>
+
+
+
+<%- include('footer') -%> 
