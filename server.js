@@ -1,7 +1,11 @@
+require('dotenv').config();
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
+const bcrypt = require('bcrypt');
+const encrypt = require('mongoose-encryption');
+const saltRounds = 10;
 
 const app = express();
 
@@ -12,10 +16,12 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-const userSchema = {
+const userSchema = new mongoose.Schema({
     email: String,
     password: String
-};
+});
+
+userSchema.plugin(encrypt, {secret: process.env.KEY, encryptedFields: ["password"]});
 
 const User = mongoose.model("User", userSchema);
 
@@ -31,29 +37,33 @@ app.get("/signup", function(req, res){
 
 app.post("/signup", function(req, res){
     console.log("posting from signup");
-    const newEmail = req.body.newEmail;
-    const newPassword = req.body.newPassword;
-    
-    const newUser = new User({
-        email: newEmail,
-        password: newPassword
-    });
 
-    User.findOne({ email: newEmail}, function(err, user){
-        if(err){
-            console.log(err);
-            console.log("error occured-------")
-        }else {
-            if(user != null){
-                console.log("Email address has already been used!");
-                res.render("signup");
+    bcrypt.hash(req.body.newPassword, saltRounds, function(err, hash) {
+        const newUser = new User({
+            email: req.body.newEmail,
+            password: hash
+        });
+
+        User.findOne({ email: req.body.newEmail}, function(err, user){
+            if(err){
+                console.log(err);
+                console.log("error occured-------")
             }else {
-                console.log("new user added to database!");
-                newUser.save();
-                res.redirect("/");
+                if(user != null){
+                    console.log("Email address has already been used!");
+                    res.render("signup");
+                }else {
+                    console.log("new user added to database!");
+                    newUser.save();
+                    res.redirect("/");
+                }
             }
-        }
+        });
     });
+    
+    
+
+    
 
 });
 
@@ -62,15 +72,18 @@ app.post("/", function(req, res){
     const user_email = req.body.userEmail;
     const user_password = req.body.userPassword;
 
-    User.findOne({ email: user_email, password: user_password}, function(err, user){
+    User.findOne({ email: user_email}, function(err, user){
         if(err){
             console.log(err);
             console.log("Error occurred!");
         }
         else {
-            if(user != null){
-                console.log("Logging in!");
-                res.render("success");
+            if(user){
+                bcrypt.compare(user_password, user.password, function(err, result){
+                    if(result === true){
+                        res.render("success");
+                    }
+                });
             }else {
                 res.render("fail");
             }
